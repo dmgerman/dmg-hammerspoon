@@ -1,0 +1,11 @@
+2021-07-13  Daniel M. German  <dmg@turingmachine.org>
+
+	* Finally started making progress into configuring hammerspoon for my liking
+
+	* using an extension to rename the tabs, i was able to finally
+	able to manage email in a separate, different window.
+
+	* added the embrion of a way to manage the windows in the huge monitor
+
+	* added the ability to move to a window by substring
+

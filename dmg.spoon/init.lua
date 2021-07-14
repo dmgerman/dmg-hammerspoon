@@ -14,11 +14,48 @@ obj.author = "dmg <dmg@uvic.ca>"
 obj.homepage = "https://github.com/dmgerman/dmg-spoon"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+
+
 -- make sure it is loaded
-hs.loadSpoon("WinWin")
+--hs.loadSpoon("WinWin")
 
 obj.wstate = {}
 
+local gmailTitle = 'dmgmail - google chrome'
+local main_monitor = "LC49G95T"
+
+function obj:print_windows()
+   for i,v in ipairs(hs.window.visibleWindows()) do
+      print(i, v:title(), v:application():name())
+   end
+end
+
+function obj:focus_by_title_or_app(st)
+   st = st:lower()
+   local cwin = hs.window.allWindows()
+   for i,v in ipairs(hs.window.allWindows()) do
+      if string.match(v:title():lower(), st) or string.match(v:application():name():lower(), st) then
+         print('Matching', v:title())
+         print(v:application():name())
+         v:focus()
+         return
+      end
+   end
+   hs.alert.show(st .. " no window matches title or application")
+end
+
+function obj:focus_by_expression()
+   hs.focus()
+   wlist = ''
+   for i,v in ipairs(hs.window.visibleWindows()) do
+      wlist = wlist .. v:title() .. "\n"
+   end
+
+   local result,st = hs.dialog.textPrompt('prompt', wlist, 'default', 'ok', 'cancel')
+   if result == 'ok' then
+      obj:focus_by_title_or_app(st)
+   end
+end
 
 function obj:isfullscreen(cwin)
    local cwin = hs.window.focusedWindow()
@@ -71,7 +108,6 @@ function obj:verticalfullscreen()
    if obj.isvfullscreen(cwin) then
 
       local oldwinf = obj.wstate[cwinid]
-
       if oldwinf then
          cwin:setFrame(oldwinf)
       else
@@ -84,8 +120,13 @@ function obj:verticalfullscreen()
    end
 end
 
+hs.hotkey.bind(
+   {"cmd", "alt", "ctrl"}, "R",
+   function() hs.reload()
+end)
 
 dmgmash = {"alt"}
+
 
 hs.hotkey.bind(dmgmash, "m", function()
                   print("Calling full screen")
@@ -113,8 +154,58 @@ hs.hotkey.bind(dmgmash, "p", function()
                   hs.window.filter.focusSouth()
 end)
 
+hs.hotkey.bind(dmgmash, "g", function()
+                  obj:focus_by_title_or_app(gmailTitle)
+end)
+
+hs.hotkey.bind(dmgmash, "b", function()
+                  obj:focus_by_expression()
+end)
+
+
 hs.hotkey.bind(dmgmash, "e", function()
                   hs.application.launchOrFocus("emacs")
 end)
+
+
+
+if spoon.WinWin then
+   hs.hotkey.bind(dmgmash, "home", function()
+                     spoon.WinWin:moveAndResize("cornerNW")
+   end)
+   hs.hotkey.bind(dmgmash, "end", function()
+                     spoon.WinWin:moveAndResize("cornerSW")
+   end)
+   hs.hotkey.bind(dmgmash, "pageup", function()
+                     spoon.WinWin:moveAndResize("cornerNE")
+   end)
+   hs.hotkey.bind(dmgmash, "pagedown", function()
+                     spoon.WinWin:moveAndResize("cornerSE")
+   end)
+end
+
+-- place windows according to the display
+
+
+-- application, window title, screen,
+---        rectangle (can be geometry(x,y, w,h) in proportions e.g. (0.5,0.5, .75, .75))
+--                it can be a function
+--         full frame rectangle ? who knows
+--         function to compare window titles, if nill use ==
+local wide_layout= {
+   {"Emacs",         nil,        main_monitor, hs.geometry.rect(0.7, 0, 0.3, 1),   nil, nil},
+   {"Google Chrome", nil,        main_monitor, hs.geometry.rect(0.4, 0, 0.3, 1),   nil, nil},
+   {"Google Chrome", gmailTitle, main_monitor, hs.geometry.rect(0, 0, 0.3, 1),     nil, nil},
+}
+
+--reorganize my windows to the main ones I use
+hs.hotkey.bind(dmgmash, '9', function()
+                  hs.application.launchOrFocus('Emacs')
+                  hs.application.launchOrFocus('Google Chrome')
+                  hs.layout.apply(wide_layout)
+end)
+
+
+hs.alert.show("dmg config loaded")
 
 return obj

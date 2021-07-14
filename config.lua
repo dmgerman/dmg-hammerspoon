@@ -22,14 +22,14 @@ hspoon_list = {
 hsapp_list = {
     {key = 'a', name = 'Atom'},
     {key = 'c', id = 'com.google.Chrome'},
-    {key = 'd', name = 'ShadowsocksX'},
+--    {key = 'd', name = 'ShadowsocksX'},
     {key = 'e', name = 'Emacs'},
     {key = 'f', name = 'Finder'},
     {key = 'i', name = 'iTerm'},
-    {key = 'k', name = 'KeyCastr'},
-    {key = 'l', name = 'Sublime Text'},
-    {key = 'm', name = 'MacVim'},
-    {key = 'o', name = 'LibreOffice'},
+--    {key = 'k', name = 'KeyCastr'},
+--    {key = 'l', name = 'Sublime Text'},
+--    {key = 'm', name = 'MacVim'},
+--    {key = 'o', name = 'LibreOffice'},
     {key = 'p', name = 'mpv'},
     {key = 'r', name = 'VimR'},
     {key = 's', name = 'Safari'},
@@ -60,7 +60,7 @@ hsaria2_secret = "token"
 hswhints_keys = {"alt", "tab"}
 
 -- appM environment keybinding: Application Launcher
-hsappM_keys = {"alt", "A"}
+hsappM_keys = {"alt", "E"}
 
 -- clipshowM environment keybinding: System clipboard reader
 hsclipsM_keys = {"alt", "C"}
@@ -69,7 +69,7 @@ hsclipsM_keys = {"alt", "C"}
 hsaria2_keys = {"alt", "D"}
 
 -- Launch Hammerspoon Search
-hsearch_keys = {"alt", "G"}
+hsearch_keys = {{"alt", "ctrl"}, "G"}
 
 -- Read Hammerspoon and Spoons API manual in default browser
 hsman_keys = {"alt", "H"}
@@ -90,7 +90,9 @@ hscheats_keys = {"alt", "S"}
 hsaclock_keys = {"alt", "T"}
 
 -- Type the URL and title of the frontmost web page open in Google Chrome or Safari.
-hstype_keys = {"alt", "V"}
+hstype_keys = {"alt", "ctrl", "V"}
 
 -- Toggle Hammerspoon console
 hsconsole_keys = {"alt", "Z"}
+
+---------------
