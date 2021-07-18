@@ -21,7 +21,7 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 obj.wstate = {}
 
-local gmailTitle = 'dmgmail'
+local gmailTitle = 'dmgerman@gmail'
 local main_monitor = "LC49G95T"
 local emacsTitle = 'emacsclient'
 
@@ -39,10 +39,11 @@ function obj:focus_by_title_or_app(st)
          print('Matching', v:title())
          print(v:application():name())
          v:focus()
-         return
+         return true
       end
    end
    hs.alert.show(st .. " no window matches title or application")
+   return false
 end
 
 function obj:focus_by_title(st)
@@ -53,10 +54,11 @@ function obj:focus_by_title(st)
          print('Matching', v:title())
          print(v:application():name())
          v:focus()
-         return
+         return true
       end
    end
    hs.alert.show(st .. " no window matches title or application")
+   return false
 end
 
 
@@ -137,6 +139,19 @@ function obj:verticalfullscreen()
    end
 end
 
+
+function obj:bind_itunes()
+   hs.hotkey.bind(dmgmash, "space", function()
+                     hs.itunes.playpause()
+   end)
+   hs.hotkey.bind(dmgmash, ",", function()
+                     hs.itunes.rw()
+   end)
+   hs.hotkey.bind(dmgmash, ". ", function()
+                     hs.itunes.ff()
+   end)
+end
+
 hs.hotkey.bind(
    {"cmd", "alt", "ctrl"}, "R",
    function() hs.reload()
@@ -173,7 +188,12 @@ hs.hotkey.bind(dmgmash, "p", function()
 end)
 
 hs.hotkey.bind(dmgmash, "g", function()
-                  obj:focus_by_title(gmailTitle)
+                  
+                  if (not obj:focus_by_title(gmailTitle))  then
+                     hs.alert.show(" no gmail... doing it the hard way")
+                     s = hs.execute("/Users/dmg/bin/goto_gmail.py", true)
+                     obj:focus_by_title(gmailTitle)
+                  end
 end)
 
 hs.hotkey.bind(dmgmashshift, "g", function()
@@ -191,6 +211,8 @@ hs.hotkey.bind(dmgmash, "e", function()
                   hs.application.launchOrFocus("emacs")
 end)
 
+;;;;;;;;;;;;;;;;
+   
 
 
 if spoon.WinWin then
@@ -258,7 +280,41 @@ end)
 hs.hotkey.bind(dmgmash, 'f14', function()
                   spoon.Zoom:toggleVideo()
 end)
+
+
 -----------------------------------------
+-- to go specific destinations
+
+function currentSelection()
+   local elem=hs.uielement.focusedElement()
+   local sel=nil
+   if elem then
+      sel=elem:selectedText()
+   end
+   if (not sel) or (sel == "") then
+      hs.eventtap.keyStroke({"cmd"}, "c")
+      hs.timer.usleep(20000)
+      sel=hs.pasteboard.getContents()
+   end
+   return (sel or "")
+end
+
+function selectionToJisho()
+   term = currentSelection()
+   local url = "open Https://jisho.org/search/" .. term
+   print(term)
+   print("to go to do")
+   print(url)
+   hs.execute(url)   
+--   hs.pasteboard.setContents("https://jisho.org/search/" .. term)
+--   hs.timer.usleep(20000)
+--   hs.eventtap.keyStroke({"cmd"}, "v")
+end
+
+hs.hotkey.bind({'cmd', 'ctrl'}, 'j', function()
+      selectionToJisho()
+end)
+
 
 hs.alert.show("dmg config loaded")
 

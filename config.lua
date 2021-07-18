@@ -97,3 +97,86 @@ hstype_keys = {"alt", "ctrl", "V"}
 hsconsole_keys = {"alt", "Z"}
 
 ---------------
+
+hs.loadSpoon("SpoonInstall")
+
+hyper = {"cmd","alt","ctrl"}
+myGrid = { w = 6, h = 4 }
+
+Install=spoon.SpoonInstall
+
+Install:andUse("WindowGrid",
+               {
+                  config = { gridGeometries =
+                                { { myGrid.w .."x" .. myGrid.h } } },
+                  hotkeys = {show_grid = {hyper, "g"}},
+                  start = true
+               }
+)
+
+--- move then to next, previous screen
+
+Install:andUse("WindowScreenLeftAndRight",
+               {
+                  config = {
+                     animationDuration = 0
+                  },
+                  hotkeys = 'default',
+                  --                 loglevel = 'debug'
+               }
+)
+
+Install:andUse("WindowHalfsAndThirds",
+               {
+                  config = {
+                     use_frame_correctness = true
+                  },
+                  hotkeys = 'default',
+                  loglevel = 'debug'
+               }
+)
+-- load the default keys
+spoon.WindowHalfsAndThirds:bindHotkeys(spoon.WindowHalfsAndThirds.defaultHotkeys)
+
+urlProvides = {
+   rhbz = { name = "Red Hat Bugzilla", url = "https://bugzilla.redhat.com/show_bug.cgi?id=%s", },
+   lp = { name = "Launchpad Bug", url = "https://launchpad.net/bugs/%s", },
+}
+
+
+Install:andUse("Seal",
+               {
+                  hotkeys = { show = { {"alt"}, "space" } },
+                  fn = function(s)
+                     s:loadPlugins({"apps",
+                                    "calc",
+                                    "safari_bookmarks",
+                                    "urlformats",
+                                    "screencapture",
+                                    "pasteboard",
+                                    "useractions"})
+                     s.plugins.safari_bookmarks.always_open_with_safari = false
+                     s.plugins.useractions.actions =
+                        {
+                           ["Hammerspoon docs webpage"] = {
+                              url = "http://hammerspoon.org/docs/",
+                              icon = hs.image.imageFromName(hs.image.systemImageNames.ApplicationIcon),
+                           },
+                           ["Translate using Jisho"] = {
+                              url = "https://jisho.org/search/${query}",
+                              icon = 'favicon',
+                              keyword = "ji",
+                           },
+                           ["Kanji damage"] = {
+                              url = "http://www.kanjidamage.com/kanji/search?utf8=%E2%9C%93&q=${query}",
+                              icon = 'favicon',
+                              keyword = 'kd'
+                           }
+                           
+                        }
+                     s:refreshAllCommands()
+                     s.plugins.urlformats:providersTable(urlProvides)
+                  end,
+                  start = true,
+               }
+)
