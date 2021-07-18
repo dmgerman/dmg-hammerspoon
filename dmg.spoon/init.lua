@@ -21,8 +21,9 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 
 obj.wstate = {}
 
-local gmailTitle = 'dmgmail - google chrome'
+local gmailTitle = 'dmgmail'
 local main_monitor = "LC49G95T"
+local emacsTitle = 'emacsclient'
 
 function obj:print_windows()
    for i,v in ipairs(hs.window.visibleWindows()) do
@@ -44,6 +45,22 @@ function obj:focus_by_title_or_app(st)
    hs.alert.show(st .. " no window matches title or application")
 end
 
+function obj:focus_by_title(st)
+   st = st:lower()
+   local cwin = hs.window.allWindows()
+   for i,v in ipairs(hs.window.allWindows()) do
+      if string.match(v:title():lower(), st) then
+         print('Matching', v:title())
+         print(v:application():name())
+         v:focus()
+         return
+      end
+   end
+   hs.alert.show(st .. " no window matches title or application")
+end
+
+
+
 function obj:focus_by_expression()
    hs.focus()
    wlist = ''
@@ -53,7 +70,7 @@ function obj:focus_by_expression()
 
    local result,st = hs.dialog.textPrompt('prompt', wlist, 'default', 'ok', 'cancel')
    if result == 'ok' then
-      obj:focus_by_title_or_app(st)
+      obj:focus_by_title(st)
    end
 end
 
@@ -126,6 +143,7 @@ hs.hotkey.bind(
 end)
 
 dmgmash = {"alt"}
+dmgmashshift = {"alt", 'shift'}
 
 
 hs.hotkey.bind(dmgmash, "m", function()
@@ -155,13 +173,19 @@ hs.hotkey.bind(dmgmash, "p", function()
 end)
 
 hs.hotkey.bind(dmgmash, "g", function()
-                  obj:focus_by_title_or_app(gmailTitle)
+                  obj:focus_by_title(gmailTitle)
+end)
+
+hs.hotkey.bind(dmgmashshift, "g", function()
+                  obj:focus_by_title(emacsTitle)
+end)
+hs.hotkey.bind(dmgmashshift, "y", function()
+                  obj:focus_by_title("youtube")
 end)
 
 hs.hotkey.bind(dmgmash, "b", function()
                   obj:focus_by_expression()
 end)
-
 
 hs.hotkey.bind(dmgmash, "e", function()
                   hs.application.launchOrFocus("emacs")
@@ -205,7 +229,41 @@ hs.hotkey.bind(dmgmash, '9', function()
                   hs.layout.apply(wide_layout)
 end)
 
+---------------------------------------------
+-- zoom
+
+zoomStatusMenuBarItem = hs.menubar.new(nil)
+zoomStatusMenuBarItem:setClickCallback(function()
+      spoon.Zoom:toggleMute()
+end)
+
+updateZoomStatus = function(event)
+   hs.printf("updateZoomStatus(%s)", event)
+   if (event == "from-running-to-meeting") then
+      zoomStatusMenuBarItem:returnToMenuBar()
+   elseif (event == "muted") then
+      zoomStatusMenuBarItem:setTitle("🙊") --🙈😡🔴
+   elseif (event == "unmuted") then
+      zoomStatusMenuBarItem:setTitle("😈") --🎥
+   elseif (event == "from-meeting-to-running") or (event == "from-running-to-closed") then
+      zoomStatusMenuBarItem:removeFromMenuBar()
+   end
+end
+hs.loadSpoon("Zoom")
+spoon.Zoom:setStatusCallback(updateZoomStatus)
+spoon.Zoom:start()
+hs.hotkey.bind(dmgmash, 'f13', function()
+                  spoon.Zoom:toggleMute()
+end)
+hs.hotkey.bind(dmgmash, 'f14', function()
+                  spoon.Zoom:toggleVideo()
+end)
+-----------------------------------------
 
 hs.alert.show("dmg config loaded")
+
+
+
+
 
 return obj
