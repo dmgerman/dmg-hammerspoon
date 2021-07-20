@@ -147,7 +147,7 @@ function obj:bind_itunes()
    hs.hotkey.bind(dmgmash, ",", function()
                      hs.itunes.rw()
    end)
-   hs.hotkey.bind(dmgmash, ". ", function()
+   hs.hotkey.bind(dmgmash, ".", function()
                      hs.itunes.ff()
    end)
 end
