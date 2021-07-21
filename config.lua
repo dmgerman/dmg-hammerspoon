@@ -146,7 +146,7 @@ urlProvides = {
 
 Install:andUse("Seal",
                {
-                  hotkeys = { show = { {"alt"}, "space" } },
+                  hotkeys = { show = { {"cmd", "ctrl"}, "space" } },
                   fn = function(s)
                      s:loadPlugins({"apps",
                                     "calc",

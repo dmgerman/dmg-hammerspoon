@@ -25,11 +25,41 @@ local gmailTitle = 'dmgerman@gmail'
 local main_monitor = "LC49G95T"
 local emacsTitle = 'emacsclient'
 
-function obj:print_windows()
-   for i,v in ipairs(hs.window.visibleWindows()) do
-      print(i, v:title(), v:application():name())
+local speakers = 'ddd'
+local headphones = 'ddd'
+local bluehead = 'ddd'
+
+
+if hs.host.localizedName() == 'silver' then
+   speakers = 'Mac mini Speakers'
+   headphones = 'External Headphones'
+end
+
+function obj:print_table0(t)
+   for i,v in ipairs(t) do
+      print(i, v)
    end
 end
+
+
+function obj:print_table(t, f)
+    for i,v in ipairs(t) do
+       print(i, f(v))
+    end
+end
+
+function obj:print_windows()
+   function w_info(w)
+      return w:title() .. w:application():name()
+   end
+   obj:print_table(hs.window.visibleWindows(), w_info)
+end
+
+--function obj:print_windows()
+-- for i,v in ipairs(hs.window.visibleWindows()) do
+--       print(i, v:title(), v:application():name())
+--   end
+--end
 
 function obj:focus_by_title_or_app(st)
    st = st:lower()
@@ -61,6 +91,28 @@ function obj:focus_by_title(st)
    return false
 end
 
+function obj:select_output_audio_device(name)
+   local name = 'unknown'
+   local wlist = ''
+   local prompt = 'Select number of the device to select'
+   for i,v in ipairs(hs.audiodevice.allOutputDevices()) do
+      wlist = wlist .. tostring(i) .. " " .. v:name() .. "\n"
+   end
+   local result,idx = hs.dialog.textPrompt(prompt, 
+                                           wlist, 'default', 'ok', 'cancel')
+   idx = tonumber(idx)
+   if result == 'ok' and idx then
+      dev = hs.audiodevice.allOutputDevices()[idx]
+      if dev then
+         name = hs.audiodevice.allOutputDevices()[idx]:name()
+      end
+      if not dev or not dev:setDefaultOutputDevice() then
+         hs.alert.show("Unable to enable audio output device " .. name)
+      else
+         hs.alert.show("Audio output device is now: " .. name)
+      end
+   end
+end
 
 
 function obj:focus_by_expression()
