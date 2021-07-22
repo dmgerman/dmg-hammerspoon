@@ -64,10 +64,13 @@ end
 ------------------
 -- select audio by command
 
-local audiochoices = {}
 
-for i,v in ipairs(hs.audiodevice.allOutputDevices()) do
-   table.insert(audiochoices, {text = v:name(), idx=i})
+local function list_audio_choices()
+   local audiochoices = {}
+   for i,v in ipairs(hs.audiodevice.allOutputDevices()) do
+      table.insert(audiochoices, {text = v:name(), idx=i})
+   end
+   return audiochoices
 end
 
 local audioChooser = hs.chooser.new(function(choice)
@@ -82,8 +85,12 @@ local audioChooser = hs.chooser.new(function(choice)
       end
 end)
 
-audioChooser:choices(audiochoices)
-hs.hotkey.bind({"cmd", "alt"}, "A", function() audioChooser:show() end)
+
+ hs.hotkey.bind({"cmd", "alt"}, "A", function()
+      local audioChoices = list_audio_choices()
+      audioChooser:choices(audioChoices)
+      audioChooser:show()
+end)
 
 -------------------------------
 -- select window by title
