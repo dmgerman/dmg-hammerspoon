@@ -61,73 +61,101 @@ end
 --   end
 --end
 
-function obj:focus_by_title_or_app(st)
-   st = st:lower()
-   local cwin = hs.window.allWindows()
-   for i,v in ipairs(hs.window.allWindows()) do
-      if string.match(v:title():lower(), st) or string.match(v:application():name():lower(), st) then
-         print('Matching', v:title())
-         print(v:application():name())
-         v:focus()
-         return true
-      end
-   end
-   hs.alert.show(st .. " no window matches title or application")
-   return false
+------------------
+-- select audio by command
+
+local audiochoices = {}
+
+for i,v in ipairs(hs.audiodevice.allOutputDevices()) do
+   table.insert(audiochoices, {text = v:name(), idx=i})
 end
 
-function obj:focus_by_title(st)
-   st = st:lower()
-   local cwin = hs.window.allWindows()
-   for i,v in ipairs(hs.window.allWindows()) do
-      if string.match(v:title():lower(), st) then
-         print('Matching', v:title())
-         print(v:application():name())
-         v:focus()
-         return true
-      end
-   end
-   hs.alert.show(st .. " no window matches title or application")
-   return false
-end
-
-function obj:select_output_audio_device(name)
-   local name = 'unknown'
-   local wlist = ''
-   local prompt = 'Select number of the device to select'
-   for i,v in ipairs(hs.audiodevice.allOutputDevices()) do
-      wlist = wlist .. tostring(i) .. " " .. v:name() .. "\n"
-   end
-   local result,idx = hs.dialog.textPrompt(prompt, 
-                                           wlist, 'default', 'ok', 'cancel')
-   idx = tonumber(idx)
-   if result == 'ok' and idx then
+local audioChooser = hs.chooser.new(function(choice)
+      if not choice then hs.alert.show("Nothing chosen"); return end
+      local idx = choice["idx"]
+      local name = choice["text"]
       dev = hs.audiodevice.allOutputDevices()[idx]
-      if dev then
-         name = hs.audiodevice.allOutputDevices()[idx]:name()
-      end
-      if not dev or not dev:setDefaultOutputDevice() then
+      if not dev:setDefaultOutputDevice() then
          hs.alert.show("Unable to enable audio output device " .. name)
       else
          hs.alert.show("Audio output device is now: " .. name)
       end
-   end
+end)
+
+audioChooser:choices(audiochoices)
+hs.hotkey.bind({"cmd", "alt"}, "A", function() audioChooser:show() end)
+
+-------------------------------
+-- select window by title
+
+theWindows = hs.window.filter.new()
+theWindows:setDefaultFilter{}
+theWindows:setSortOrder(hs.window.filter.sortByFocusedLast)
+obj.currentWindows = {}
+for i,v in ipairs(theWindows:getWindows()) do
+   table.insert(obj.currentWindows, v)
 end
 
+local function callback_window_created(w, appName, event)
 
-function obj:focus_by_expression()
-   hs.focus()
-   wlist = ''
-   for i,v in ipairs(hs.window.visibleWindows()) do
-      wlist = wlist .. v:title() .. "\n"
+   if event == "windowDestroyed" then
+      print("deleting from windows-----------------", w)
+      for i,v in ipairs(obj.currentWindows) do
+         if v == w then
+            table.remove(obj.currentWindows, i)
+            return
+         end
+      end
+      print("Not found .................. ", w)
+      obj:print_table0(obj.currentWindows)
+      print("Not found ............ :()", w)
+      return
    end
-
-   local result,st = hs.dialog.textPrompt('prompt', wlist, 'default', 'ok', 'cancel')
-   if result == 'ok' then
-      obj:focus_by_title(st)
+   if event == "windowCreated" then
+      print("inserting into windows.........", w)
+      table.insert(obj.currentWindows, 1, w)
+      return
+   end
+   if event == "windowFocused" then
+      --otherwise is equivalent to delete and then create
+      callback_window_created(w, appName, "windowDestroyed")
+      callback_window_created(w, appName, "windowCreated")
+      obj:print_table0(obj.currentWindows)
    end
 end
+theWindows:subscribe(hs.window.filter.windowCreated, callback_window_created)
+theWindows:subscribe(hs.window.filter.windowDestroyed, callback_window_created)
+theWindows:subscribe(hs.window.filter.windowFocused, callback_window_created)
 
+local function list_window_choices()
+   local windowChoices = {}
+--   for i,v in ipairs(theWindows:getWindows()) do
+   for i,v in ipairs(obj.currentWindows) do
+      table.insert(windowChoices, {
+                      text = v:title() .. "--" .. v:application():name(),
+                      win=v})
+   end
+   return windowChoices;
+end
+
+local windowChooser = hs.chooser.new(function(choice)
+      if not choice then hs.alert.show("Nothing to focus"); return end
+      local v = choice["win"]
+      if v then
+         v:focus()
+      else
+         hs.alert.show("unable fo focus " .. name)
+      end
+end)
+
+
+hs.hotkey.bind({"alt"}, "b", function()
+      local windowChoices = list_window_choices()
+      windowChooser:choices(windowChoices)
+      windowChooser:show()
+end)
+
+-------------------
 function obj:isfullscreen(cwin)
    local cwin = hs.window.focusedWindow()
    local cscreen = cwin:screen()
@@ -253,10 +281,6 @@ hs.hotkey.bind(dmgmashshift, "g", function()
 end)
 hs.hotkey.bind(dmgmashshift, "y", function()
                   obj:focus_by_title("youtube")
-end)
-
-hs.hotkey.bind(dmgmash, "b", function()
-                  obj:focus_by_expression()
 end)
 
 hs.hotkey.bind(dmgmash, "e", function()
