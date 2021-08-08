@@ -14,6 +14,17 @@ obj.author = "dmg <dmg@uvic.ca>"
 obj.homepage = "https://github.com/dmgerman/dmg-spoon"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
 
+-- do this at the beginning in case we have an error
+hs.hotkey.bind(
+   {"cmd", "alt", "ctrl"}, "R",
+   function() hs.reload()
+end)
+
+
+
+-- desk monitors
+local lg49hdmi='9014FD62-F9BA-D7B5-3D19-FC1626C9B248'
+local lg49dp='A7FC8831-E694-B548-0857-D6964E3302DB'
 
 
 -- make sure it is loaded
@@ -30,10 +41,7 @@ local headphones = 'ddd'
 local bluehead = 'ddd'
 
 
-if hs.host.localizedName() == 'silver' then
-   speakers = 'Mac mini Speakers'
-   headphones = 'External Headphones'
-end
+defaultAudioDevice = 'External Headphones'
 
 function obj:print_table0(t)
    for i,v in ipairs(t) do
@@ -67,8 +75,11 @@ end
 
 local function list_audio_choices()
    local audiochoices = {}
+   local current = hs.audiodevice.defaultOutputDevice()
    for i,v in ipairs(hs.audiodevice.allOutputDevices()) do
-      table.insert(audiochoices, {text = v:name(), idx=i})
+      if v:name() ~= current:name() then
+         table.insert(audiochoices, {text = v:name(), idx=i})
+      end
    end
    return audiochoices
 end
@@ -86,9 +97,10 @@ local audioChooser = hs.chooser.new(function(choice)
 end)
 
 
- hs.hotkey.bind({"cmd", "alt"}, "A", function()
+hs.hotkey.bind({"cmd", "alt"}, "A", function()
       local audioChoices = list_audio_choices()
       audioChooser:choices(audioChoices)
+      audioChooser:placeholderText(defaultAudioDevice)
       audioChooser:show()
 end)
 
@@ -99,6 +111,8 @@ theWindows = hs.window.filter.new()
 theWindows:setDefaultFilter{}
 theWindows:setSortOrder(hs.window.filter.sortByFocusedLast)
 obj.currentWindows = {}
+obj.previousSelection = nil  -- the idea is that one switches back and forth between two windows all the time
+
 for i,v in ipairs(theWindows:getWindows()) do
    table.insert(obj.currentWindows, v)
 end
@@ -106,20 +120,20 @@ end
 local function callback_window_created(w, appName, event)
 
    if event == "windowDestroyed" then
-      print("deleting from windows-----------------", w)
+--      print("deleting from windows-----------------", w)
       for i,v in ipairs(obj.currentWindows) do
          if v == w then
             table.remove(obj.currentWindows, i)
             return
          end
       end
-      print("Not found .................. ", w)
-      obj:print_table0(obj.currentWindows)
-      print("Not found ............ :()", w)
+--      print("Not found .................. ", w)
+--      obj:print_table0(obj.currentWindows)
+--      print("Not found ............ :()", w)
       return
    end
    if event == "windowCreated" then
-      print("inserting into windows.........", w)
+--      print("inserting into windows.........", w)
       table.insert(obj.currentWindows, 1, w)
       return
    end
@@ -127,7 +141,7 @@ local function callback_window_created(w, appName, event)
       --otherwise is equivalent to delete and then create
       callback_window_created(w, appName, "windowDestroyed")
       callback_window_created(w, appName, "windowCreated")
-      obj:print_table0(obj.currentWindows)
+--      obj:print_table0(obj.currentWindows)
    end
 end
 theWindows:subscribe(hs.window.filter.windowCreated, callback_window_created)
@@ -137,10 +151,15 @@ theWindows:subscribe(hs.window.filter.windowFocused, callback_window_created)
 local function list_window_choices()
    local windowChoices = {}
 --   for i,v in ipairs(theWindows:getWindows()) do
-   for i,v in ipairs(obj.currentWindows) do
-      table.insert(windowChoices, {
-                      text = v:title() .. "--" .. v:application():name(),
-                      win=v})
+   for i,w in ipairs(obj.currentWindows) do
+      if w ~= hs.window.focusedWindow() then
+         table.insert(windowChoices, {
+                         text = w:title() .. "--" .. w:application():name(),
+                         subText = w:application():name(),
+                         uuid = i,
+                         image = hs.image.imageFromAppBundle(w:application():bundleID()),
+                         win=w})
+      end
    end
    return windowChoices;
 end
@@ -159,6 +178,9 @@ end)
 hs.hotkey.bind({"alt"}, "b", function()
       local windowChoices = list_window_choices()
       windowChooser:choices(windowChoices)
+      --windowChooser:placeholderText('')
+      windowChooser:rows(12)         
+      windowChooser:query(nil)         
       windowChooser:show()
 end)
 
@@ -239,11 +261,6 @@ function obj:bind_itunes()
    end)
 end
 
-hs.hotkey.bind(
-   {"cmd", "alt", "ctrl"}, "R",
-   function() hs.reload()
-end)
-
 dmgmash = {"alt"}
 dmgmashshift = {"alt", 'shift'}
 
@@ -261,6 +278,11 @@ end)
 hs.hotkey.bind(dmgmash, "a", function()
                   hs.window.filter.focusWest()
 end)
+
+hs.hotkey.bind(dmgmash, "0", function()
+                  hs.window.frontmostWindow():sendToBack()
+end)
+
 
 hs.hotkey.bind(dmgmash, "f", function()
                   hs.window.filter.focusEast()
@@ -296,21 +318,26 @@ end)
 
 ;;;;;;;;;;;;;;;;
    
-
-
 if spoon.WinWin then
    hs.hotkey.bind(dmgmash, "home", function()
+                     spoon.WinWin:moveAndResize("halfleft")
+   end)
+   hs.hotkey.bind(dmgmash, "pageup", function()
+                     spoon.WinWin:moveAndResize("halfright")
+   end)
+   hs.hotkey.bind(dmgmashshift, "home", function()
                      spoon.WinWin:moveAndResize("cornerNW")
+   end)
+   hs.hotkey.bind(dmgmashshift, "pageup", function()
+                     spoon.WinWin:moveAndResize("cornerNE")
    end)
    hs.hotkey.bind(dmgmash, "end", function()
                      spoon.WinWin:moveAndResize("cornerSW")
    end)
-   hs.hotkey.bind(dmgmash, "pageup", function()
-                     spoon.WinWin:moveAndResize("cornerNE")
-   end)
    hs.hotkey.bind(dmgmash, "pagedown", function()
                      spoon.WinWin:moveAndResize("cornerSE")
    end)
+
 end
 
 -- place windows according to the display
@@ -398,11 +425,246 @@ hs.hotkey.bind({'cmd', 'ctrl'}, 'j', function()
       selectionToJisho()
 end)
 
+hs.alert.show("trial areaa")
+
+function first_display()
+   return hs.screen.primaryScreen()
+end
+function second_display()
+   return hs.screen.primaryScreen()
+end
+
+fdisp =  hs.screen.find(1):getUUID()
+fdisp2 = hs.screen.find(2):getUUID()
+
+local config = {
+   spaces = {
+      {
+         text = "Deep",
+         subText = "Work on focused work.",
+         blacklist = {'distraction'},
+         intentRequired = true
+      },
+      {
+         text = "gmail",
+         subText = "Do email",
+         intentRequired = true
+      },
+      {
+         text = "zoom",
+         subText = "Talk to people.",
+--         blacklist = {'focus'},
+         image = hs.image.imageFromAppBundle('us.zoom.xos'),
+         launch = {'communication'},
+         funcs = 'example',
+         layouts = {
+            {"zoom.us", nil, fdisp,  hs.geometry.rect(0,0  ,0.5,0.5)},
+            {"OBS",     nil, fdisp2, hs.geometry.rect(0,0.5,0.5,1)}
+         },
+      }
+   },
+   Applications = {
+      ['com.apple.finder'] = {
+         bundleID = 'com.apple.finder',
+         hyperKey = 'f',
+         tags = {'communication'}
+      },
+      ['us.zoom.xos'] = {
+         bundleID = 'us.zoom.xos',
+         layouts = {
+            {"zoom.us", nil, nil, hs.geometry.rect{0,400,1048,800}}
+         },
+         tags = {'communication'}
+      },
+      ['obs'] = {
+         bundleID = 'com.obsproject.obs-studio',
+         tags = {'communication'}
+      },
+      ['com.microsoft.VSCode'] = {
+         bundleID = 'com.microsoft.VSCode',
+         tags = {'focus'},
+      },
+   },
+   funcs = {
+      example = {
+         setup = function()
+            print("Setting up the example workspace")
+         end,
+         teardown = function()
+            print("Ending up the example workspace")
+         end
+      }
+   }
+}
+
+-- Load spoon
+-- https://www.hammerspoon.org/docs/hs.html#loadSpoon
+
+
+hs.loadSpoon('Headspace')
+--spoon.Headspace:start()
+--   :bindHotKeys({ choose = {{'control', 'alt', 'cmd'}, 'space'}})
+--   :setTogglKey('string of toggl API key')
+--   :loadConfig(config)
+
+
+--------------------
+-- window management
+
+
+local editor = "Emacs"
+obj.quick_edit_app = nil
+
+hs.hotkey.bind(
+    {"alt"},
+    "`",
+    function()
+        print("Entering function")
+        local emacs = hs.application.find(editor)
+        local current_app = hs.window.focusedWindow()
+        if current_app:title():sub(1, 5) == editor then
+            if obj.quick_edit_app == nil then
+                hs.alert("🤔 No edit in progress")
+                return
+            end
+            hs.eventtap.keyStroke({"cmd", "shift"}, ";")
+            hs.eventtap.keyStrokes("(dmg/quick-edit-end)")
+            hs.eventtap.keyStroke({}, "return")
+            obj.quick_edit_app:focus()
+            os.execute("sleep " .. tonumber(1))
+            hs.eventtap.keyStroke({"cmd"}, "a")
+            hs.eventtap.keyStroke({"cmd"}, "v")
+            obj.quick_edit_app = nil
+        else
+            obj.quick_edit_app = hs.window.focusedWindow()
+            hs.eventtap.keyStroke({"cmd"}, "a")
+            hs.eventtap.keyStroke({"cmd"}, "c")
+            print("activating emacs")
+            emacs:activate()
+            os.execute("sleep " .. tonumber(1))
+            --            hs.eventtap.keyStroke({"command", "shift"}, ";")
+            hs.eventtap.keyStroke({"cmd", "shift"}, ";")
+            hs.eventtap.keyStrokes("(dmg/quick-edit)")
+            hs.eventtap.keyStrokes("\n")
+
+--            hs.eventtap.keyStroke({}, "ESCAPE")
+            --os.execute("sleep " .. tonumber(1))
+            --hs.eventtap.keyStrokes("xdmg/quick-edit\n")
+            --os.execute("sleep " .. tonumber(1))
+            --hs.eventtap.keyStrokes("\ntest...\n")
+            --hs.eventtap.keyStroke({"ctrl"}, "p")
+
+        end
+    end
+)
+
+-- from diego zamboni
+function currentSelection()
+   local elem=hs.uielement.focusedElement()
+   local sel=nil
+   if elem then
+      sel=elem:selectedText()
+   end
+   if (not sel) or (sel == "") then
+      hs.eventtap.keyStroke({"cmd"}, "c")
+      hs.timer.usleep(20000)
+      sel=hs.pasteboard.getContents()
+   end
+   return (sel or "")
+end
+
+obj.emacs = nil
+obj.current_win = nil
+
+function do_emacs()
+   -- this is a callback to wait until other keys are consumed
+   obj.emacs:activate()
+   hs.eventtap.keyStroke({"cmd", "shift"}, ";")
+   hs.eventtap.keyStrokes("(dmg/hs-edit-begin)")
+   hs.eventtap.keyStrokes("\n")
+end
+
+function edit_in_emacs(everything)
+   print("Entering")
+   editor = "Emacs"
+--   do return end
+
+   obj.emacs = hs.application.find(editor)
+   obj.current_win = hs.window.focusedWindow()
+   if obj.current_win:title():sub(1, 5) == "Emacs" then
+      hs.alert("🤔 already in emacs")
+   else
+      -- i think it is more useful iis there is a selection
+      -- we use the clipboard to communicate both ways with emacs...
+      -- there could be other ways, but this is simple and effective
+      if everything then
+         hs.eventtap.keyStroke({"cmd"}, "a")
+      end
+      hs.eventtap.keyStroke({"cmd"}, "c")
+      hs.timer.doAfter(0.5,do_emacs)
+   end
+end
+
+function emacs_sends_back(everything)
+   -- the text is in the clipboard
+   -- enable the original window and see what happens
+   -- this is usually run by emacs using hs
+   -- hs -c "emacs_sends_back()"
+
+   print("emacs is sendinb back the text")
+
+   if not obj.current_win then
+      hs.alert("No current window active")
+   else
+      if (obj.current_win:focus()) then
+         if everything then
+            hs.eventtap.keyStroke({"cmd"}, "a")
+         end
+         hs.eventtap.keyStroke({"cmd"}, "v")
+      else
+         hs.alert("Window to send back text does not exist any more")
+      end
+   end
+
+end
+
+
+hs.hotkey.bind({"alt"}, '2', nil, function()
+      print("abcdef")
+      edit_in_emacs(True)
+end)
+
+hs.hotkey.bind({"alt", "shift"}, '2', nil, function()
+      print("Edit in emacs only selection")
+      edit_in_emacs(False)
+end)
+
+
+
+hs.hotkey.bind({"alt"}, '3', nil, function()
+      print("rebinding cmd v")
+      local emacs = hs.application.find(editor)
+      local current_app = hs.window.focusedWindow()
+      if current_app:title():sub(1, 5) == "Emacs" then
+         hs.alert("🤔 already in emacs")
+      else
+         hs.eventtap.keyStroke({"cmd"}, "a")
+         hs.eventtap.keyStroke({"cmd"}, "c")
+      end
+end)
+
+---------------------
+
+require ("hs.ipc")
+
+if not hs.ipc.cliStatus() then
+   hs.alert("hs nOT installed.. installing")
+   hs.ipc.cliInstall('/Users/dmg/')
+end
+
+
+
 
 hs.alert.show("dmg config loaded")
-
-
-
-
 
 return obj

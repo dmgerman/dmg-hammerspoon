@@ -3,7 +3,7 @@ hspoon_list = {
     "AClock",
     -- "BingDaily",
     -- "Calendar",
-    "CircleClock",
+    -- "CircleClock",
     "ClipShow",
     "CountDown",
     "FnMate",
@@ -79,7 +79,7 @@ hsman_keys = {"alt", "H"}
 hscountdM_keys = {"alt", "I"}
 
 -- Lock computer's screen
-hslock_keys = {"alt", "L"}
+hslock_keys = {"alt", "ctrl", "alt", "shift", "L"}
 
 -- resizeM environment keybinding: Windows manipulation
 hsresizeM_keys = {"alt", "R"}
@@ -104,6 +104,7 @@ hyper = {"cmd","alt","ctrl"}
 myGrid = { w = 6, h = 4 }
 
 Install=spoon.SpoonInstall
+
 
 Install:andUse("WindowGrid",
                {
