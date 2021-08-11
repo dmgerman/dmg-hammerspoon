@@ -81,6 +81,14 @@ local function list_audio_choices()
          table.insert(audiochoices, {text = v:name(), idx=i})
       end
    end
+   -- sort them by name
+   table.sort(
+      audiochoices,
+      function(a, b)
+         return a["text"] < b["text"]
+      end
+   )
+
    return audiochoices
 end
 
@@ -385,7 +393,7 @@ hs.loadSpoon("Zoom")
 spoon.Zoom:setStatusCallback(updateZoomStatus)
 spoon.Zoom:start()
 hs.hotkey.bind(dmgmash, 'f13', function()
-                  spoon.Zoom:toggleMute()
+                  spoyyyyon.Zoom:toggleMute()
 end)
 hs.hotkey.bind(dmgmash, 'f14', function()
                   spoon.Zoom:toggleVideo()
@@ -584,7 +592,7 @@ function do_emacs()
    hs.eventtap.keyStrokes("\n")
 end
 
-function edit_in_emacs(everything)
+function edit_in_emacs(everything, cut)
    print("Entering")
    editor = "Emacs"
 --   do return end
@@ -600,7 +608,11 @@ function edit_in_emacs(everything)
       if everything then
          hs.eventtap.keyStroke({"cmd"}, "a")
       end
-      hs.eventtap.keyStroke({"cmd"}, "c")
+      if cut then
+         hs.eventtap.keyStroke({"cmd"}, "x")
+      else
+         hs.eventtap.keyStroke({"cmd"}, "c")
+      end
       hs.timer.doAfter(0.5,do_emacs)
    end
 end
@@ -629,19 +641,29 @@ function emacs_sends_back(everything)
 end
 
 
+-- edit by selecting everything, by copying
 hs.hotkey.bind({"alt"}, '2', nil, function()
-      print("abcdef")
-      edit_in_emacs(True)
+      edit_in_emacs(True, False)
 end)
 
+-- edit by selecting everything, by cutting
 hs.hotkey.bind({"alt", "shift"}, '2', nil, function()
-      print("Edit in emacs only selection")
-      edit_in_emacs(False)
+      edit_in_emacs(True, True)
+end)
+
+-- edit by using selection, by copying
+hs.hotkey.bind({"alt"}, '3', nil, function()
+      edit_in_emacs(False, False)
+end)
+
+-- edit by using selection, by cutting
+hs.hotkey.bind({"alt", "shift"}, '3', nil, function()
+      edit_in_emacs(False, True)
 end)
 
 
 
-hs.hotkey.bind({"alt"}, '3', nil, function()
+hs.hotkey.bind({"alt"}, '4', nil, function()
       print("rebinding cmd v")
       local emacs = hs.application.find(editor)
       local current_app = hs.window.focusedWindow()

@@ -16,6 +16,7 @@ hspoon_list = {
     -- "UnsplashZ",
     "WinWin",
     "dmg",
+    "heisig",
     "Zoom"
 }
 
