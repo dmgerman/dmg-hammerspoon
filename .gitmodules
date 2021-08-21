@@ -1,0 +1,3 @@
+[submodule "heisig.spoon"]
+	path = heisig.spoon
+	url = ./heisig.spoon

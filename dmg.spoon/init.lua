@@ -1,4 +1,3 @@
---- === dmg ===
 ---
 --- dmg hammerspoon
 ---
@@ -124,6 +123,33 @@ obj.previousSelection = nil  -- the idea is that one switches back and forth bet
 for i,v in ipairs(theWindows:getWindows()) do
    table.insert(obj.currentWindows, v)
 end
+
+function obj:focus_by_title(t)
+   print(' [' .. t ..']')
+   for i,v in ipairs(obj.currentWindows) do
+      print('           [' .. v:title() .. ']')
+      if string.find(v:title(), t) then
+         v:focus()
+         return v
+      end
+   end
+   return nil
+end
+
+function obj:focus_by_app(appName)
+   print(' [' .. appName ..']')
+   for i,v in ipairs(obj.currentWindows) do
+      print('           [' .. v:application():name() .. ']')
+      if string.find(v:application():name(), appName) then
+         print("Focusing window" .. v:title())
+         v:focus()
+         return v
+      end
+   end
+   return nil
+end
+
+
 
 local function callback_window_created(w, appName, event)
 
@@ -313,6 +339,7 @@ hs.hotkey.bind(dmgmash, "g", function()
                   end
 end)
 
+
 hs.hotkey.bind(dmgmashshift, "g", function()
                   obj:focus_by_title(emacsTitle)
 end)
@@ -326,6 +353,35 @@ end)
 
 ;;;;;;;;;;;;;;;;
    
+function dmgMoveAndResize(option)
+    local cwin = hs.window.focusedWindow()
+    if cwin then
+        local cscreen = cwin:screen()
+        local cres = cscreen:fullFrame()
+        local wf = cwin:frame()
+        if option == "1-3rd" then
+           cwin:setFrame({x=cres.x, y=cres.y, w=cres.w/3, h=cres.h})
+        elseif option == "2-3rd" then
+           cwin:setFrame({x=cres.x + cres.w/3, y=cres.y, w=cres.w/3, h=cres.h})
+        elseif  option == "3-3rd" then
+           cwin:setFrame({x=cres.x + cres.w*2/3, y=cres.y, w=cres.w/3, h=cres.h})
+        end
+    else
+        hs.alert.show("No focused window!")
+    end
+end
+
+hs.hotkey.bind(dmgmash, "6", function()
+                  dmgMoveAndResize("1-3rd")
+end)
+hs.hotkey.bind(dmgmash, "7", function()
+                  dmgMoveAndResize("2-3rd")
+end)
+hs.hotkey.bind(dmgmash, "8", function()
+                  dmgMoveAndResize("3-3rd")
+end)
+
+
 if spoon.WinWin then
    hs.hotkey.bind(dmgmash, "home", function()
                      spoon.WinWin:moveAndResize("halfleft")
@@ -565,6 +621,51 @@ hs.hotkey.bind(
         end
     end
 )
+
+-------------- Netflix
+
+obj.netflixW = nil
+
+function play_toggle_callback()
+   if (obj.netflixW) then
+      obj.netflixW:focus()
+   end
+   obj.netflixW = nil   
+end
+
+function focus_playable_window()
+   -- find netflix first,
+   -- then youtube
+   -- then vlc
+   -- then ...
+   obj.netflixW = hs.window.focusedWindow()
+   w = obj:focus_by_title('- Netflix -')
+   if (not w)  then
+      w =  obj:focus_by_title('- YouTube -')
+   end
+   if (not w)  then
+      w =  obj:focus_by_app('VLC')
+   end
+   return w
+end
+
+function playable_window_do(keyToSend)
+   w = focus_playable_window()
+   if w then
+      hs.eventtap.keyStroke({}, keyToSend)
+      hs.timer.doAfter(0.5, play_toggle_callback)
+   else
+      hs.alert.show(" there is no a window")
+   end
+end
+
+hs.hotkey.bind(dmgmash, "p", function ()
+                  playable_window_do("space")
+end)
+
+hs.hotkey.bind(dmgmash, "o", function ()
+                  playable_window_do("left")
+end)
 
 -- from diego zamboni
 function currentSelection()
