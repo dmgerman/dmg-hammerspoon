@@ -572,57 +572,7 @@ hs.loadSpoon('Headspace')
 --   :loadConfig(config)
 
 
---------------------
--- window management
-
-
-local editor = "Emacs"
-obj.quick_edit_app = nil
-
-hs.hotkey.bind(
-    {"alt"},
-    "`",
-    function()
-        print("Entering function")
-        local emacs = hs.application.find(editor)
-        local current_app = hs.window.focusedWindow()
-        if current_app:title():sub(1, 5) == editor then
-            if obj.quick_edit_app == nil then
-                hs.alert("🤔 No edit in progress")
-                return
-            end
-            hs.eventtap.keyStroke({"cmd", "shift"}, ";")
-            hs.eventtap.keyStrokes("(dmg/quick-edit-end)")
-            hs.eventtap.keyStroke({}, "return")
-            obj.quick_edit_app:focus()
-            os.execute("sleep " .. tonumber(1))
-            hs.eventtap.keyStroke({"cmd"}, "a")
-            hs.eventtap.keyStroke({"cmd"}, "v")
-            obj.quick_edit_app = nil
-        else
-            obj.quick_edit_app = hs.window.focusedWindow()
-            hs.eventtap.keyStroke({"cmd"}, "a")
-            hs.eventtap.keyStroke({"cmd"}, "c")
-            print("activating emacs")
-            emacs:activate()
-            os.execute("sleep " .. tonumber(1))
-            --            hs.eventtap.keyStroke({"command", "shift"}, ";")
-            hs.eventtap.keyStroke({"cmd", "shift"}, ";")
-            hs.eventtap.keyStrokes("(dmg/quick-edit)")
-            hs.eventtap.keyStrokes("\n")
-
---            hs.eventtap.keyStroke({}, "ESCAPE")
-            --os.execute("sleep " .. tonumber(1))
-            --hs.eventtap.keyStrokes("xdmg/quick-edit\n")
-            --os.execute("sleep " .. tonumber(1))
-            --hs.eventtap.keyStrokes("\ntest...\n")
-            --hs.eventtap.keyStroke({"ctrl"}, "p")
-
-        end
-    end
-)
-
--------------- Netflix
+-------------------------------------------------- play media
 
 obj.netflixW = nil
 
@@ -641,6 +591,9 @@ function focus_playable_window()
    obj.netflixW = hs.window.focusedWindow()
    w = obj:focus_by_title('- Netflix -')
    if (not w)  then
+      w =  obj:focus_by_title('- Animelon -')
+   end
+   if (not w)  then
       w =  obj:focus_by_title('- YouTube -')
    end
    if (not w)  then
@@ -653,10 +606,12 @@ function playable_window_do(keyToSend)
    w = focus_playable_window()
    if w then
       hs.eventtap.keyStroke({}, keyToSend)
-      hs.timer.doAfter(0.5, play_toggle_callback)
+      hs.timer.doAfter(0.05, play_toggle_callback)
    else
       hs.alert.show(" there is no a window")
+      return false
    end
+   return true
 end
 
 hs.hotkey.bind(dmgmash, "p", function ()
@@ -666,6 +621,8 @@ end)
 hs.hotkey.bind(dmgmash, "o", function ()
                   playable_window_do("left")
 end)
+
+-------------------------------------------------- play media
 
 -- from diego zamboni
 function currentSelection()
@@ -741,6 +698,19 @@ function emacs_sends_back(everything)
 
 end
 
+-- make sure that emacs is brought to the front when EmacsClient is executed
+
+function emacsclientWatcher(appName, eventType, appObject)
+   if (eventType == hs.application.watcher.activated) then
+      if (appName == "EmacsClient") then
+         -- Bring Emacs to Front
+         hs.osascript.applescript('tell application "Emacs" to activate')
+      end
+   end
+end
+appWatcher = hs.application.watcher.new(emacsclientWatcher)
+appWatcher:start()
+
 
 -- edit by selecting everything, by copying
 hs.hotkey.bind({"alt"}, '2', nil, function()
@@ -786,7 +756,47 @@ if not hs.ipc.cliStatus() then
 end
 
 
+-- use f7
+hs.hotkey.bind({}, 'f7', nil, function()
+      playable_window_do("left")
+end)
 
+-- use f8 to do play
+hs.hotkey.bind({}, 'f8', nil, function()
+      hs.eventtap.event.newSystemKeyEvent("PLAY", true):post()
+end)
+
+hs.hotkey.bind({}, 'f9', nil, function()
+      hs.alert.show("f9 pressed")
+      
+end)
+
+hs.hotkey.bind({}, 'f10', nil, function()
+      hs.alert.show("f10 pressed")
+      
+end)
+
+hs.hotkey.bind({}, 'f11', nil, function()
+      hs.alert.show("f11 pressed")
+      
+end)
+hs.hotkey.bind({}, 'f12', nil, function()
+      hs.alert.show("f12 pressed")
+      
+end)
+
+hs.hotkey.bind({}, 'f13', nil, function()
+      hs.alert.show("f13 pressed")
+      
+end)
+hs.hotkey.bind({}, 'f14', nil, function()
+      hs.alert.show("f14 pressed")
+      
+end)
+hs.hotkey.bind({}, 'f15', nil, function()
+      hs.alert.show("f15 pressed")
+      
+end)
 
 hs.alert.show("dmg config loaded")
 
