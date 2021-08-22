@@ -124,16 +124,21 @@ for i,v in ipairs(theWindows:getWindows()) do
    table.insert(obj.currentWindows, v)
 end
 
-function obj:focus_by_title(t)
-   print(' [' .. t ..']')
+function obj:find_window_by_title(t)
    for i,v in ipairs(obj.currentWindows) do
-      print('           [' .. v:title() .. ']')
       if string.find(v:title(), t) then
-         v:focus()
          return v
       end
    end
    return nil
+end
+
+function obj:focus_by_title(t)
+   w = obj:find_window_by_title(t)
+   if w then
+      w:focus()
+   end
+   return w
 end
 
 function obj:focus_by_app(appName)
@@ -588,13 +593,22 @@ function focus_playable_window()
    -- then youtube
    -- then vlc
    -- then ...
+   -- Find a browser window with the following
    obj.netflixW = hs.window.focusedWindow()
    w = obj:focus_by_title('- Netflix -')
    if (not w)  then
-      w =  obj:focus_by_title('- Animelon -')
+      w =  obj:focus_by_title('- YouTube -')
    end
    if (not w)  then
-      w =  obj:focus_by_title('- YouTube -')
+      w =  obj:focus_by_title('- Animelon -')
+   end
+   if w then
+      -- chrome does bring the correct window up if it is in a different screen
+      -- this is a workaround... keep an eye on this
+      w:application():activate()
+      hs.timer.doAfter(0.001, function ()
+                       w:focus()
+      end)
    end
    if (not w)  then
       w =  obj:focus_by_app('VLC')
@@ -797,6 +811,13 @@ hs.hotkey.bind({}, 'f15', nil, function()
       hs.alert.show("f15 pressed")
       
 end)
+
+hs.hotkey.bind({"cmd", "alt", "ctrl"}, "P", function()
+      -- emulates a click
+      hs.application.get("Hammerspoon"):selectMenuItem("Console...")
+      hs.application.launchOrFocus("Hammerspoon")
+end)
+
 
 hs.alert.show("dmg config loaded")
 
