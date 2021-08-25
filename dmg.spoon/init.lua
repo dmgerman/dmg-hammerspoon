@@ -189,14 +189,23 @@ theWindows:subscribe(hs.window.filter.windowFocused, callback_window_created)
 
 local function list_window_choices()
    local windowChoices = {}
+   local theAppName = ""
+   local image = nil
 --   for i,v in ipairs(theWindows:getWindows()) do
    for i,w in ipairs(obj.currentWindows) do
       if w ~= hs.window.focusedWindow() then
+         if w:application() then
+           appName = w:application():name()
+	   theImage = hs.image.imageFromAppBundle(w:application():bundleID())
+	 else
+	   theAppName = '*********'
+	   theImage = nil
+	 end
          table.insert(windowChoices, {
-                         text = w:title() .. "--" .. w:application():name(),
+                         text = w:title() .. "--" .. theAppName,
                          subText = w:application():name(),
                          uuid = i,
-                         image = hs.image.imageFromAppBundle(w:application():bundleID()),
+                         image = theImage,
                          win=w})
       end
    end
@@ -503,8 +512,10 @@ function second_display()
    return hs.screen.primaryScreen()
 end
 
-fdisp =  hs.screen.find(1):getUUID()
-fdisp2 = hs.screen.find(2):getUUID()
+--fdisp =  hs.screen.find(1):getUUID()
+--fdisp2 = hs.screen.find(1):getUUID()
+fdisp = hs.screen.mainScreen()
+fdisp2 = fdisp 
 
 local config = {
    spaces = {
