@@ -121,6 +121,7 @@ obj.currentWindows = {}
 obj.previousSelection = nil  -- the idea is that one switches back and forth between two windows all the time
 
 for i,v in ipairs(theWindows:getWindows()) do
+   print(v:title())
    table.insert(obj.currentWindows, v)
 end
 
@@ -160,6 +161,9 @@ local function callback_window_created(w, appName, event)
 
    if event == "windowDestroyed" then
 --      print("deleting from windows-----------------", w)
+      if w then
+         print("destroying window" .. w:title())
+      end
       for i,v in ipairs(obj.currentWindows) do
          if v == w then
             table.remove(obj.currentWindows, i)
@@ -172,12 +176,18 @@ local function callback_window_created(w, appName, event)
       return
    end
    if event == "windowCreated" then
+      if w then
+         print("creating window" .. w:title())
+      end
 --      print("inserting into windows.........", w)
       table.insert(obj.currentWindows, 1, w)
       return
    end
    if event == "windowFocused" then
       --otherwise is equivalent to delete and then create
+      if w then
+         print("Focusing window" .. w:title())
+      end
       callback_window_created(w, appName, "windowDestroyed")
       callback_window_created(w, appName, "windowCreated")
 --      obj:print_table0(obj.currentWindows)
@@ -189,23 +199,20 @@ theWindows:subscribe(hs.window.filter.windowFocused, callback_window_created)
 
 local function list_window_choices()
    local windowChoices = {}
-   local theAppName = ""
-   local image = nil
---   for i,v in ipairs(theWindows:getWindows()) do
    for i,w in ipairs(obj.currentWindows) do
       if w ~= hs.window.focusedWindow() then
-         if w:application() then
-           appName = w:application():name()
-	   theImage = hs.image.imageFromAppBundle(w:application():bundleID())
-	 else
-	   theAppName = '*********'
-	   theImage = nil
-	 end
+         local app = w:application()
+         local appImage = nil
+         local appName  = '(none)'
+         if app then
+            appName = app:name()
+            appImage = hs.image.imageFromAppBundle(w:application():bundleID())
+         end
          table.insert(windowChoices, {
-                         text = w:title() .. "--" .. theAppName,
-                         subText = w:application():name(),
+                         text = w:title() .. "--" .. appName,
+                         subText = appName,
                          uuid = i,
-                         image = theImage,
+                         image = appImage,
                          win=w})
       end
    end
@@ -489,9 +496,8 @@ end
 
 function selectionToJisho()
    term = currentSelection()
-   local url = "open Https://jisho.org/search/" .. term
-   print(term)
-   print("to go to do")
+   local url = "open 'https://jisho.org/search/" .. term .. "'"
+   print("to go to do", term)
    print(url)
    hs.execute(url)   
 --   hs.pasteboard.setContents("https://jisho.org/search/" .. term)
@@ -819,8 +825,8 @@ hs.hotkey.bind({}, 'f14', nil, function()
       
 end)
 hs.hotkey.bind({}, 'f15', nil, function()
-      hs.alert.show("f15 pressed")
-      
+--      hs.eventtap.keyStroke({"cmd"}, "c")
+      hs.execute("/Users/dmg/syncThing/jp/ankiConnect/addCard.sh", true)
 end)
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "P", function()
@@ -828,6 +834,44 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "P", function()
       hs.application.get("Hammerspoon"):selectMenuItem("Console...")
       hs.application.launchOrFocus("Hammerspoon")
 end)
+
+
+function obj:deepl()
+   print("generating the events")
+--   hs.eventtap.event.newKeyEvent(hs.keycodes.map.cmd, true):post()
+   hs.eventtap.event.newKeyEvent("F16", true):post()
+   hs.eventtap.event.newKeyEvent("F16", false):post()
+--   hs.eventtap.event.newKeyEvent(hs.keycodes.map.cmd, false):post()
+
+
+   --hs.eventtap.keyStroke("{cmd}", "F16")
+end
+
+function obj:deepl2()
+   print("generating the events try 2")
+   hs.eventtap.keyStroke({},"F16")   
+   hs.eventtap.keyStroke({},"F16")   
+
+   --hs.eventtap.keyStroke("{cmd}", "F16")
+end
+
+-- language related functions
+
+hs.hotkey.bind({"cmd", "alt", "ctrl"}, "D", function()
+      obj:deepl()
+end)
+
+-- switch directly to the language, rather than toggling from one to another
+
+hs.hotkey.bind({"cmd", "alt", "ctrl"}, "J", function()
+      hs.keycodes.setMethod('Hiragana')
+end)
+
+hs.hotkey.bind({"cmd", "alt", "ctrl"}, "E", function()
+      hs.keycodes.setLayout('Canadian English')
+end)
+
+---
 
 
 hs.alert.show("dmg config loaded")
